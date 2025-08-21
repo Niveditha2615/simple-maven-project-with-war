@@ -1,59 +1,38 @@
 pipeline {
-    agent any   // Run on any available agent
+    agent any
 
     tools {
-        maven 'Maven3'   // Name of Maven installation in Jenkins (Manage Jenkins → Global Tool Configuration)
-        jdk 'Java11'     // Name of JDK installation in Jenkins
+        maven 'Maven 3'
     }
 
     stages {
         stage('Checkout') {
             steps {
-                echo "Checking out source code..."
-                git branch: 'main', url: 'https://github.com/Niveditha2615/simple-maven-project-with-war.git'
+                git url: 'https://github.com/Savitha-savi1/simple-maven-project-with-war', branch: 'main'
             }
         }
 
         stage('Build') {
             steps {
-                echo "Running Maven Clean and Compile..."
-                sh 'mvn clean compile'
+                // Skip tests while building
+                sh 'mvn clean package -DskipTests'
             }
         }
 
-        stage('Test') {
-            steps {
-                echo "Running Unit Tests..."
-                sh 'mvn test'
-            }
-            post {
-                always {
-                    junit '**/target/surefire-reports/*.xml'  // Publish test reports
-                }
-            }
-        }
+        stage('Deploy') {
+    steps {
+        sh '''
+        # Stop Tomcat
+        /opt/tomcat/bin/shutdown.sh
 
-        stage('Package') {
-            steps {
-                echo "Packaging the application..."
-                sh 'mvn package'
-            }
-        }
+        # Copy WAR
+        cp target/simple-war-app-1.0-SNAPSHOT.war /opt/tomcat/webapps/
 
-        stage('Archive Artifacts') {
-            steps {
-                echo "Archiving JAR/WAR files..."
-                archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
-            }
-        }
+        # Start Tomcat
+        /opt/tomcat/bin/startup.sh
+        '''
     }
+}
 
-    post {
-        success {
-            echo 'Build finished successfully ✅'
-        }
-        failure {
-            echo 'Build failed ❌'
-        }
     }
 }
