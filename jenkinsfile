@@ -1,38 +1,59 @@
 pipeline {
-    agent any
+    agent any   // Run on any available agent
 
     tools {
-        maven 'Maven 3'
+        maven 'Maven3'   // Name of Maven installation in Jenkins (Manage Jenkins → Global Tool Configuration)
+        jdk 'Java11'     // Name of JDK installation in Jenkins
     }
 
     stages {
         stage('Checkout') {
             steps {
-                git url: 'https://github.com/Niveditha2615/simple-maven-project-with-war', branch: 'main'
+                echo "Checking out source code..."
+                git branch: 'main', url: ''
             }
         }
 
         stage('Build') {
             steps {
-                // Skip tests while building
-                sh 'mvn clean package -DskipTests'
+                echo "Running Maven Clean and Compile..."
+                sh 'mvn clean compile'
             }
         }
 
-        stage('Deploy') {
-    steps {
-        sh '''
-        # Stop Tomcat
-        /opt/tomcat/bin/shutdown.sh
+        stage('Test') {
+            steps {
+                echo "Running Unit Tests..."
+                sh 'mvn test'
+            }
+            post {
+                always {
+                    junit '**/target/surefire-reports/*.xml'  // Publish test reports
+                }
+            }
+        }
 
-        # Copy WAR
-        cp target/simple-war-app-1.0-SNAPSHOT.war /opt/tomcat/webapps/
+        stage('Package') {
+            steps {
+                echo "Packaging the application..."
+                sh 'mvn package'
+            }
+        }
 
-        # Start Tomcat
-        /opt/tomcat/bin/startup.sh
-        '''
+        stage('Archive Artifacts') {
+            steps {
+                echo "Archiving JAR/WAR files..."
+                archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+            }
+        }
     }
-}
 
+    post {
+        success {
+            echo 'Build finished successfully ✅'
+        }
+        failure {
+            echo 'Build failed ❌'
+        }
     }
 }
