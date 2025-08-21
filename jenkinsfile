@@ -10,7 +10,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 echo "Checking out source code..."
-                git branch: 'main', url: ''
+                git branch: 'main', url: 'https://github.com/Niveditha2615/simple-maven-project-with-war.git'
             }
         }
 
